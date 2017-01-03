@@ -32,7 +32,7 @@ public class ExampleOne extends AbstractEntryPoint{
 	@SuppressWarnings({ "unchecked", "deprecation" })
 	@Override
 	protected void createContents(Composite parent) {
-		parent.setLayout(new GridLayout());
+		parent.setLayout(new GridLayout(3,false));
 //		parent.setLayout(null);
 		Button button = new Button(parent, SWT.PUSH);
 		button.setText("Refresh");
@@ -40,6 +40,8 @@ public class ExampleOne extends AbstractEntryPoint{
 		zoomInBtn.setText("zoomIn(+)");
 		Button zoomOutBtn = new Button(parent, SWT.PUSH);
 		zoomOutBtn.setText("zoomOut(-)");
+		Button saveModifiedSvgBtn = new Button(parent, SWT.PUSH);
+		saveModifiedSvgBtn.setText("save");
 
 		DevicePanelSvg deviceSvg = new DevicePanelSvg(parent, SWT.NONE);
 //		deviceSvg.setBounds(20, 0, 1000, 600);
@@ -49,12 +51,12 @@ public class ExampleOne extends AbstractEntryPoint{
 		deviceSvg.addOneSvgPanelById(sysObjId);
 		deviceSvg.setLayoutData(new GridData(GridData.FILL_BOTH));
 		//add number 2 svg panel
-		DevicePanelSvg deviceSvg2 = new DevicePanelSvg(parent, SWT.NONE);
-		String sysObjId2 = "svg06"; //svg file name.
-		deviceSvg2.setStatuss(createStatusMap(50));
-		deviceSvg2.setTooltipdata(createTooltipMap(50));
-		deviceSvg2.addOneSvgPanelById(sysObjId2);
-		deviceSvg2.setLayoutData(new GridData(GridData.FILL_BOTH));
+//		DevicePanelSvg deviceSvg2 = new DevicePanelSvg(parent, SWT.NONE);
+//		String sysObjId2 = "svg01"; //svg file name.
+//		deviceSvg2.setStatuss(createStatusMap(50));
+//		deviceSvg2.setTooltipdata(createTooltipMap(50));
+//		deviceSvg2.addOneSvgPanelById(sysObjId2);
+//		deviceSvg2.setLayoutData(new GridData(GridData.FILL_BOTH));
 
 
 		button.addSelectionListener(new SelectionAdapter() {
@@ -87,6 +89,12 @@ public class ExampleOne extends AbstractEntryPoint{
 				deviceSvg.refreshSize(tempSize);
 			}
 		});
+		saveModifiedSvgBtn.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				deviceSvg.rewriteSvgFile();
+			}
+		});
 	}
 
 	public static String getRandom(int t){
@@ -104,7 +112,7 @@ public class ExampleOne extends AbstractEntryPoint{
 	private JsonObject createStatusMap(int num){
 		JsonObject statusMap = new JsonObject();
 		for(int i=0;i<num;i++){
-			statusMap.set(""+(i+1), getRangeRandomNum(0,5));
+			statusMap.set("portName_"+(i+1), getRangeRandomNum(0,5)); //键值为端口名称，也就是接口名。
 		}
 		return statusMap;
 	}
@@ -117,8 +125,8 @@ public class ExampleOne extends AbstractEntryPoint{
 	}
 	private JsonObject createTooltipMap(int num){
 		JsonObject tooltipMap = new JsonObject();
-		for(int i=0;i<num;i++){
-			tooltipMap.set(""+(i+1), "端口信息<br>端口类型：p1<br>端口索引：p2<br>端口描述：p3<br>接口索引：p4<br>端口状态：p5<br>管理状态：p6<br>接收流量：p7<br>发送流量：p8<br>速率   ：p9");
+		for(int i=0;i<num;i++){ //键值为端口名称，也就是接口名。
+			tooltipMap.set("portName_"+(i+1), "端口信息<br>端口类型：p1<br>端口索引：p2<br>端口描述：p3<br>接口索引：p4<br>端口状态：p5<br>管理状态：p6<br>接收流量：p7<br>发送流量：p8<br>速率   ：p9");
 		}
 		return tooltipMap;
 	}
