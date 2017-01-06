@@ -10,7 +10,6 @@
     init:function(options){
       this.container = options.container;
       this.menuPanel = options.menuPanel;
-      this.portNameDialog = options.portNameDialog;
       this.uniqueId = options.uniqueId;
       this.svgTxt = options.svgTxt || '';
       this.portBeSelectedCall = options.portBeSelectedCall;
@@ -18,6 +17,7 @@
       this.statusMap = options.statusMap || {};
       this.tooltipDataMap = options.tooltipDataMap || {};
       this.interfaceNameList = options.interfaceNameList || [];
+      this.portNameDialog = null;
       this.svgContainer = null;
       this.tooltipTitle = null;
       this.svgJqObj = null; //svg的jquery对象
@@ -55,13 +55,20 @@
       this.svgWidth = (this.svgJqObj.attr("width")).split("in")[0] *96; //unit 'in' to 'px' have to multiply by 100.
       this.svgHeight = (this.svgJqObj.attr("height")).split("in")[0] *96;
       $(this.container).append( element );
-      //重新格式一下svg的结构，获取网线端口元素数组。
+
+      this.portNameDialog = new svgdevicepanel.PortNameDialog({
+        parentPanel:this,
+        container:this.container,
+        svgTxt : this.svgTxt,
+        uniqueId:this.uniqueId,
+        getModifiedSvgTxtCall:this.getModifiedSvgTxtCall
+      });
       setTimeout(function(){
         _this.formatSvgXml();
         _this.createToolTip();
-        console.log("svg xml:-----");
         _this.createIntervalTimer();
         _this.addEvent();
+        console.log("init completed!!");
       },10);
     },
     addEvent:function(){
@@ -113,8 +120,6 @@
         $(_this.container).find("svg g[data-portnum]").find("path").css("fill","black");
         _this.updateStatus();
         _this.updateTooltip();
-        _this.svgTxt = _this.svgContainer.innerHTML;
-        _this.getModifiedSvgTxtCall.apply(null,[_this.svgTxt]);
       });
     },
     formatSvgXml:function(){
@@ -135,7 +140,7 @@
           this.portJqEleMap[key+""] = parentG_jq;
           parentG_jq.css("cursor","pointer");
           parentG_jq.attr("data-portnum", key).find("path").css("stroke", "#fff").css("stroke-width", "0");
-        }if(nameCn == 'interfaceName'){
+        }else if(nameCn == 'interfaceName'){
           parentG_jq.attr("data-portname", key);
           this.updatePortNum2InterfaceMap(parentG_jq);
         }else if(nameCn == '端口灯号' || nameCn == 'portLightNum'){
@@ -220,9 +225,6 @@
         jqTitle && jqTitle.text(tooltipStr.replace(/<br>/g,'\n'));
       }
     },
-    setOnePortStatus:function(){
-
-    },
     //
     updateInterfaceName:function(interfaceNameList){
       var _this = this;
@@ -270,6 +272,8 @@
       return str.substring(start+1,end);
     },
     dispose:function(){
+      this.portNameDialog.dispose();
+      this.portNameDialog = null;
       $(this.svgContainer).off().remove();
       clearInterval(this.intervalTimer);
     }
