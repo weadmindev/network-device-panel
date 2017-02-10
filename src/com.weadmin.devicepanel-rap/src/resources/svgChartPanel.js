@@ -9,7 +9,6 @@
   SvgChartPanel.prototype = {
     init:function(options){
       this.container = options.container;
-      this.menuPanel = options.menuPanel;
       this.uniqueId = options.uniqueId;
       this.svgTxt = options.svgTxt || '';
       this.portBeSelectedCall = options.portBeSelectedCall;
@@ -32,20 +31,21 @@
       this.blinkFlag = 0; //
       this.intervalTimer = null;
       this.paramNameMap = {"":"", "SysOid":"sysObjId", "容器号":"containerNum", "端口号":"portNum", "端口灯号":"portLightNum", "端口数":"portCount", "端口灯数":"portLightCount"};
-      this.noNeedBlinkstatusMap = [0]; //不需要闪烁的状态值列表。
-      // 默认：黑色， 0：深灰色， 1：绿色。2：黄色。3：红色。 4：蓝色，5：橘黄色
-      this.statusColorMap = {"":"#080808", 0:"#080808", 1:"#19E807", 2:"#FFF20B", 3:"#FF1411", 4:"#2813E8", 5:"#FF6600"};
-      this.strokeColorMap = {"":"#8819E8", 0:"#FF1411", 1:"#FF11FF", 2:"#9011FF", 3:"#3B12E8", 4:"#FF5C08", 5:"#00FFDC"};
-
+      this.noNeedBlinkstatusMap = ["","0"]; //不需要闪烁的状态值列表。
+      // 默认：灰色， 0：黑色， 1：绿色。2：黄色。3：红色。 4：蓝色，5：橘黄色
+      this.statusColorMap = {"":"#888888", "0":"#080808", "1":"#19E807", "2":"#FFF20B", "3":"#FF1411", "4":"#2813E8", "5":"#FF6600"};
+      this.strokeColorMap = {"":"#666666", "0":"#FF1411", "1":"#FF11FF", "2":"#9011FF", "3":"#3B12E8", "4":"#FF5C08", "5":"#00FFDC"};
+      this.statusDescMap = {"":"未绑定","0":"down","1":"正常","2":"警告","3":"危险"}; //端口状态的描述。
       this.blinkLightMap = {}; //哪些指示灯需要闪烁。
       this.initElement();
     },
     initElement:function(){
       var _this = this;
+      $(this.container).append("<div class='headerDesc'><ul></ul></div>");
       var element = this.svgContainer= document.createElement( "div" );
 	    element.style.position = "absolute";
 	    element.style.left = "0";
-	    element.style.top = "0";
+	    element.style.top = "30px";
 			element.style.overflow="auto";
 			// element.style.backgroundColor ="#7f707f";
 			$(element).addClass("svgContainer").html(this.svgTxt);
@@ -55,6 +55,11 @@
       this.svgWidth = (this.svgJqObj.attr("width")).split("in")[0] *96; //unit 'in' to 'px' have to multiply by 100.
       this.svgHeight = (this.svgJqObj.attr("height")).split("in")[0] *96;
       $(this.container).append( element );
+      //
+      // console.log("svgcontainer width:",$(this.svgContainer).width()/2);
+      // setTimeout(function(){
+      //   console.log("svgcontainer width2:",$(_this.svgContainer).width()/2);
+      // },1000);
 
       this.portNameDialog = new svgdevicepanel.PortNameDialog({
         parentPanel:this,
@@ -67,6 +72,7 @@
         _this.formatSvgXml();
         _this.createToolTip();
         _this.createIntervalTimer();
+        _this.addHeaderDesc();
         _this.addEvent();
         // console.log("init completed!!");
       },10);
@@ -76,23 +82,25 @@
       for(var key in this.portJqEleMap){
         var portRect = this.portJqEleMap[key];
         portRect.on("contextmenu", function(event){ //响应鼠标右键事件
-          var pos = $(this).position();
-          var menuWidth = _this.menuPanel.getWidth();
-          var menuHeight = _this.menuPanel.getHeight();
-          var svgPos = $(this).closest("svg").position();
-    			_this.selectedNodeId = $(this).attr("data-portname");
-          var destPos = {left:pos.left-svgPos.left,top:pos.top-svgPos.top};
-          if(destPos.left+menuWidth+20>_this.svgWidth){
-            destPos.left = _this.svgWidth-menuWidth-20;
-          }
-          if(destPos.top+menuHeight>_this.svgHeight){
-            destPos.top = _this.svgHeight-menuHeight;
-          }
-    			_this.menuPanel.showMenuPanel(destPos,_this.selectedNodeId);
+          _this.selectedNodeId = $(this).attr("data-portname");
+          // var pos = $(this).position();
+          // var menuWidth = _this.menuPanel.getWidth();
+          // var menuHeight = _this.menuPanel.getHeight();
+          // var svgPos = $(this).closest("svg").position();
+          // var destPos = {left:pos.left-svgPos.left,top:pos.top-svgPos.top};
+          // if(destPos.left+menuWidth+20>_this.svgWidth){
+          //   destPos.left = _this.svgWidth-menuWidth-20;
+          // }
+          // if(destPos.top+menuHeight>_this.svgHeight){
+          //   destPos.top = _this.svgHeight-menuHeight;
+          // }
+    			// _this.menuPanel.showMenuPanel(destPos,_this.selectedNodeId);
+          _this.portBeSelected("portmenu" , _this.selectedNodeId, {left:event.clientX,top:event.clientY});
     			event.preventDefault();
         });
-  			portRect.on("click", function (d, index) {
-  				_this.portBeSelected("portport" , $(this).attr('data-portname'));
+  			portRect.on("click", function (event) {
+          console.log("click event:",event);
+  				_this.portBeSelected("portport" , $(this).attr('data-portname'),{left:event.clientX,top:event.clientY});
   			});
         portRect.on("mouseover", function () {
           var that = $(this);
@@ -106,18 +114,16 @@
           $(this).attr('class',that.attr('class').split(" ")[0]);
           $(this).removeClass('mouseover'+_this.uniqueId);
   				$(this).find("path").css("stroke-width", "0");
-          setTimeout(function(){ //this is necessary
-            _this.menuPanel.hideMenuPanel();
-          },50);
   			});
       }
       $(this.container).on('customEvt.portChanged',function(evt,oldNum,oldName,newNum,newName){
-        // console.log("端口绑定有改变。。。。。oldNum:"+oldNum+","+oldName+","+newNum+","+newName);
+        console.log("端口绑定有改变。oldNum:"+oldNum+","+oldName+","+newNum+","+newName);
         _this.portNum2InterfaceNameMap[oldNum+""] = "";
         _this.portNum2InterfaceNameMap[newNum+""] = newName;
         _this.interfaceName2portNumMap[oldName] = "";
         _this.interfaceName2portNumMap[newName] = newNum;
-        $(_this.container).find("svg g[data-portnum]").find("path").css("fill","black");
+        $(_this.container).find("svg g[data-portnum]").find("path").css("fill","#888888");
+        $(_this.container).find("svg g[data-portnum]").find("title").text("端口信息");
         _this.updateStatus();
         _this.updateTooltip();
       });
@@ -202,7 +208,9 @@
     updateStatus : function (statusMap) {
       statusMap ? (this.statusMap = statusMap) : null;
       for(var portName in this.statusMap){
-        var value = this.statusMap[portName] || '';
+        if(isNaN(this.statusMap[portName])){continue;}
+        this.statusMap[portName] = this.statusMap[portName].toString();
+        var value = this.statusMap[portName].toString();
         var portNum = this.interfaceName2portNumMap[portName] ||'';
         var portEl = this.portJqEleMap[portNum];
         var portLightEl = this.portLightJqElMap[portNum];
@@ -232,8 +240,8 @@
         _this.portNameDialog.updateNameList(interfaceNameList);
       },100);
     },
-    portBeSelected:function(eventName,portName){
-      this.portBeSelectedCall && this.portBeSelectedCall.apply(null,[eventName,portName]);
+    portBeSelected:function(eventName,portName,position){
+      this.portBeSelectedCall && this.portBeSelectedCall.apply(null,[eventName,portName,position]);
     },
     getSize:function(){
       return {width:+(this.svgWidth.toFixed(2)), height:+(this.svgHeight.toFixed(2))};
@@ -265,6 +273,26 @@
       }
       this.portNum2InterfaceNameMap[portNum] = interfaceName;
       this.interfaceName2portNumMap[interfaceName] = portNum;
+    },
+    addHeaderDesc:function(){
+      var _this = this;
+      var $cont = $(".headerDesc ul");
+      // $cont.addClass("clearfix");
+      $.each(_this.statusDescMap,function(key,value){
+        var str = '<li style="">'+_this.statusDescMap[key]+':</li><li style="height:20px;"><div style="width:20px;height:20px;margin-right:10px;display:inline-block;background:'+
+          _this.statusColorMap[key]+';"></div></li>';
+        if(key == ""){
+          $cont.prepend('<li>接口状态分为：</li>'+str);
+        }else if(key == "1"){
+          $cont.append('<li> up:根据接口总流量可分为：</li>'+str);
+        }else{
+          $cont.append(str);
+        }
+      });
+      // $(".headerDesc").append('<br><div style="color:red;font-size:14px;text-align: center;clear:both;margin-top: 6px; display:block; height:0;">注：未绑定:灰色，down:黑色，up:根据接口总流量可分为:正常，危险，警告</div>');
+      setTimeout(function(){
+        $(".headerDesc").css({"position":"relative","width":$(".svgContainer").width()/2+"px"});
+      },1000);
     },
     getValueFromStr:function(str){
       var start = str.indexOf('(');
