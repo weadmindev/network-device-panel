@@ -156,7 +156,7 @@
         }
       }
     },
-    createToolTip:function(){
+    createToolTip:function(){ //创建svg图上的端口的提示信息。
       var _this = this;
       for(var key in this.portJqEleMap){
         var portRect = _this.portJqEleMap[key];
@@ -168,7 +168,7 @@
         portRect.append(titleTip);
       }
     },
-    createIntervalTimer:function(){
+    createIntervalTimer:function(){ //
       var _this = this;
       this.intervalTimer = setInterval(function(){
         if(_this.blinkFlag == 1){
@@ -181,7 +181,7 @@
       },1000);
     },
     // indicator light blink ,指示灯的闪烁
-    startIndicatorLightBlink:function(){
+    startIndicatorLightBlink:function(){ //开启指示灯的闪烁
       for(var portNum in this.blinkLightMap){
         var g_el = this.blinkLightMap[portNum];
         var portName = this.portNum2InterfaceNameMap[portNum]||"";
@@ -190,7 +190,7 @@
         g_el.find("ellipse") && g_el.find("ellipse").css("fill",colorValue);
       }
     },
-    stopIndicatorLightBlink:function(){
+    stopIndicatorLightBlink:function(){  //关闭指示灯的闪烁
       for(var portNum in this.blinkLightMap){
         var g_el = this.blinkLightMap[portNum];
         var portName = this.portNum2InterfaceNameMap[portNum]||"";
@@ -233,7 +233,7 @@
         jqTitle && jqTitle.text(tooltipStr.replace(/<br>/g,'\n'));
       }
     },
-    //
+    //更新界面的名字
     updateInterfaceName:function(interfaceNameList){
       var _this = this;
       setTimeout(function(){
